@@ -40,7 +40,7 @@ class LoginRequest extends FormRequest
     public function authenticate(): void
 {
     $this->ensureIsNotRateLimited();
-
+    // Tess Login
     $loginType = filter_var($this->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
     if (! Auth::attempt([$loginType => $this->input('login'), 'password' => $this->input('password')], $this->boolean('remember'))) {
