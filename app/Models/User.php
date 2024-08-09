@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -20,7 +21,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'username'
+        'username',
+        'provider',
+        'provider_id',
+        'provider_token',
+        'email_verified_at',
     ];
 
     /**
@@ -44,5 +49,18 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public static function generateUserName($username){
+        if ($username === null) {
+            $username = Str::lower(Str::random(length : 8));
+        }
+
+        if (User::where('username', $username)->exists()) {
+            $newUsername = $username.Str::lower(Str::random(length : 3));
+            $username = self::generateUserName($newUsername);
+        }
+
+        return $username;
     }
 }
