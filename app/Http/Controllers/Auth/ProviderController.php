@@ -21,34 +21,42 @@ class ProviderController extends Controller
         try {
             $SocialUser = Socialite::driver($provider)->user();
             // dd($SocialUser);
-
+        
             $user = User::where([
                 'provider' => $provider,
                 'provider_id' => $SocialUser->id
             ])->first();
             // dd($user);
-
-            if (User::where('email', $SocialUser->getEmail())->exists()) {
-                return redirect('/')->withErrors(['login' => 'This email uses different method to login']);
+        
+            if ($user) {
+                Auth::login($user);
+                return redirect('/dashboard');
             }
-            // dd($user);
-            if (!$user) {
-                $user = User::create([
-                    'name' => $SocialUser->getName(),
-                    'username' => User::generateUserName($SocialUser->getNickname()),
-                    'email_verified_at' => now(),
-                    'email' => $SocialUser->getEmail(),
-                    'provider_token' => $SocialUser->token,
-                    'provider' =>  $provider,
-                    'provider_id' => $SocialUser->getId(),
-                ]);
+        
+            $existingUser = User::where('email', $SocialUser->getEmail())->first();
+            if ($existingUser) {
+                if ($existingUser->provider !== $provider) {
+                    return redirect('/')->withErrors(['login' => 'This email uses different method to login']);
+                }
             }
-
+        
+            $user = User::create([
+                'name' => $SocialUser->getName(),
+                'username' => User::generateUserName($SocialUser->getNickname()),
+                'email_verified_at' => now(),
+                'email' => $SocialUser->getEmail(),
+                'provider_token' => $SocialUser->token,
+                'provider' => $provider,
+                'provider_id' => $SocialUser->getId(),
+            ]);
+        
             Auth::login($user);
-
+        
             return redirect('/dashboard');
         } catch (\Exception $e) {
             return redirect('/');
         }
+        
+        
     }
 }
