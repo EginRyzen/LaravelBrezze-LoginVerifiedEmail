@@ -2,11 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
-use Illuminate\Auth\Events\Lockout;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
+use App\Models\User;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Events\Lockout;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
@@ -42,16 +43,31 @@ class LoginRequest extends FormRequest
     $this->ensureIsNotRateLimited();
     // Tess Login
     $loginType = filter_var($this->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    // dd($loginType);
 
-    if (! Auth::attempt([$loginType => $this->input('login'), 'password' => $this->input('password')], $this->boolean('remember'))) {
-        RateLimiter::hit($this->throttleKey());
-
+    $user = User::where($loginType, $this->input('login'))->first();
+    // dd($user);
+    if (!$user) {
         throw ValidationException::withMessages([
             'login' => trans('auth.failed'),
         ]);
     }
 
-    RateLimiter::clear($this->throttleKey());
+    if ($user->email_verified_at != null && $user->password != null) {
+        if (! Auth::attempt([$loginType => $this->input('login'), 'password' => $this->input('password')], $this->boolean('remember'))) {
+            RateLimiter::hit($this->throttleKey());
+    
+            throw ValidationException::withMessages([
+                'login' => trans('auth.failed'),
+            ]);
+        }
+    
+        RateLimiter::clear($this->throttleKey());
+    }else{
+        throw ValidationException::withMessages([
+            'login' => trans('auth.failed'),
+        ]);
+    }
 }
 
 

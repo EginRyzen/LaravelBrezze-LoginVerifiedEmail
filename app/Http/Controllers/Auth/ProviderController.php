@@ -20,14 +20,18 @@ class ProviderController extends Controller
 
         try {
             $SocialUser = Socialite::driver($provider)->user();
-            if (User::where('email', $SocialUser->getEmail())->exists()) {
-                return redirect('/')->withErrors(['login' => 'This email uses different method to login']);
-            }
+            // dd($SocialUser);
 
             $user = User::where([
                 'provider' => $provider,
                 'provider_id' => $SocialUser->id
-            ]);
+            ])->first();
+            // dd($user);
+
+            if (User::where('email', $SocialUser->getEmail())->exists()) {
+                return redirect('/')->withErrors(['login' => 'This email uses different method to login']);
+            }
+            // dd($user);
             if (!$user) {
                 $user = User::create([
                     'name' => $SocialUser->getName(),
@@ -39,6 +43,7 @@ class ProviderController extends Controller
                     'provider_id' => $SocialUser->getId(),
                 ]);
             }
+
             Auth::login($user);
 
             return redirect('/dashboard');
